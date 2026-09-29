@@ -1,21 +1,15 @@
-:root { font-family: Georgia, serif; color: #ede5f6; background: #1d123e; }
+:root { font-family: Georgia, serif; color: #51434d; background: #f6efe0; }
 * { box-sizing: border-box; }
 html, body, #root { margin: 0; width: 100%; min-height: 100%; }
 button, input { font: inherit; }
-.aquarium { position: relative; width: 100%; height: 100svh; min-height: 400px; overflow: hidden; background: #1d123e; }
+.aquarium { position: relative; width: 100%; height: 100svh; min-height: 400px; overflow: hidden; background: #f6efe0; }
 .deepsea-sketch { position: absolute; inset: 0; width: 100%; height: 100%; }
-.deepsea-sketch canvas { display: block; }
-.aquarium-vignette { position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 clamp(55px, 12vw, 220px) rgba(10, 6, 32, .3); }
-.aquarium-controls { position: absolute; z-index: 2; bottom: max(20px, env(safe-area-inset-bottom)); right: max(20px, env(safe-area-inset-right)); display: flex; gap: 8px; padding: 7px; border: 1px solid rgba(243, 209, 244, .13); border-radius: 100px; background: rgba(23, 12, 50, .32); backdrop-filter: blur(9px); opacity: .58; transition: opacity .25s ease; }
+.deepsea-sketch canvas { display: block; touch-action: none; cursor: grab; }
+.deepsea-sketch canvas:active { cursor: grabbing; }
+.aquarium-vignette { position: absolute; inset: 0; pointer-events: none; box-shadow: none; }
+.aquarium-controls { position: absolute; z-index: 2; bottom: max(20px, env(safe-area-inset-bottom)); right: max(20px, env(safe-area-inset-right)); display: flex; gap: 8px; padding: 7px; border: 1px solid rgba(102, 79, 86, .18); border-radius: 100px; background: rgba(248, 242, 230, .76); backdrop-filter: blur(9px); opacity: .62; transition: opacity .25s ease; }
 .aquarium-controls:hover, .aquarium-controls:focus-within { opacity: 1; }
-.aquarium-controls button { width: 42px; height: 42px; display: grid; place-items: center; color: #e5d5ef; border: 0; border-radius: 50%; background: transparent; cursor: pointer; font: 22px Georgia, serif; }
-.aquarium-controls button:hover, .aquarium-controls button[aria-expanded="true"] { background: rgba(240, 198, 227, .13); }
-.tune-panel { position: absolute; z-index: 3; right: max(20px, env(safe-area-inset-right)); bottom: calc(max(20px, env(safe-area-inset-bottom)) + 67px); width: min(360px, calc(100vw - 40px)); padding: 17px 20px 15px; border: 1px solid rgba(233, 181, 221, .32); border-radius: 12px; background: rgba(32, 17, 62, .91); backdrop-filter: blur(20px); box-shadow: 0 15px 45px rgba(10, 6, 32, .34); font: 11px/1.3 ui-monospace, SFMono-Regular, Consolas, monospace; }
-.tune-panel-top { display: flex; align-items: center; justify-content: space-between; color: #f0d3e9; letter-spacing: .12em; }
-.tune-panel-top button { border: 0; color: #d7bedf; background: transparent; font: 23px/1 Georgia, serif; cursor: pointer; }
-.tune-row { display: grid; grid-template-columns: 83px minmax(0, 1fr) 36px; gap: 9px; align-items: center; margin: 17px 0; color: #c6b4d9; }
-.tune-row input { width: 100%; accent-color: #e9a7ca; }
-.tune-row output { text-align: right; color: #f1cbdc; }
-.reset-tune { display: block; margin: 7px 0 0 auto; border: 0; background: transparent; color: #ddbbd8; font: inherit; cursor: pointer; }
-button:focus-visible, input:focus-visible { outline: 2px solid #9ee6e9; outline-offset: 2px; }
-@media (max-width: 600px) { .aquarium-controls { bottom: max(14px, env(safe-area-inset-bottom)); right: 14px; } .aquarium-controls button { width: 44px; height: 44px; } .tune-panel { right: 14px; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 66px); } }
+.aquarium-controls button { width: 42px; height: 42px; display: grid; place-items: center; color: #62515e; border: 0; border-radius: 50%; background: transparent; cursor: pointer; font: 22px Georgia, serif; }
+.aquarium-controls button:hover { background: rgba(174, 123, 135, .12); }
+button:focus-visible { outline: 2px solid #9b798d; outline-offset: 2px; }
+@media (max-width: 600px) { .aquarium-controls { bottom: max(14px, env(safe-area-inset-bottom)); right: 14px; } .aquarium-controls button { width: 44px; height: 44px; } }

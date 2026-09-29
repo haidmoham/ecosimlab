@@ -1,24 +1,24 @@
-import { useEffect, useState } from "react";
-import { DeepSeaSketch } from "./deepsea";
+import { useEffect, useRef, useState } from "react";
+import { DeepSeaSketch, type TiltReading } from "./deepsea";
 import "./styles.css";
 
-const defaults = { currentStrength: 0.55, encounterDensity: 0.5, texture: 0.72 };
+const presentation = { currentStrength: 0.45, encounterDensity: 2, texture: 0.5 };
 
-function Slider({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
-  return <label className="tune-row">
-    <span>{label}</span>
-    <input type="range" min="0" max="1" step="0.01" value={value} onChange={(event) => onChange(Number(event.target.value))} />
-    <output>{Math.round(value * 100)}%</output>
-  </label>;
-}
+const wrapDegrees = (angle: number) => ((angle + 180) % 360 + 360) % 360 - 180;
+const tiltAxis = (angle: number) => {
+  const magnitude = Math.max(0, Math.abs(angle) - 2);
+  return Math.sign(angle) * Math.min(1, magnitude / 18);
+};
 
 export default function App() {
   const [seed, setSeed] = useState(() => Math.floor(Math.random() * 0x7fffffff));
   const [paused, setPaused] = useState(false);
-  const [tuneOpen, setTuneOpen] = useState(false);
-  const [currentStrength, setCurrentStrength] = useState(defaults.currentStrength);
-  const [encounterDensity, setEncounterDensity] = useState(defaults.encounterDensity);
-  const [texture, setTexture] = useState(defaults.texture);
+  const tiltRef = useRef<TiltReading>({ x: 0, y: 0, at: 0 });
+  const neutralRef = useRef<{ beta: number; gamma: number } | null>(null);
+  const motionListenerRef = useRef<((event: DeviceOrientationEvent) => void) | null>(null);
+  const [motionEnabled, setMotionEnabled] = useState(false);
+  const [motionUnavailable, setMotionUnavailable] = useState(false);
+  const motionPossible = typeof window !== "undefined" && window.isSecureContext && "DeviceOrientationEvent" in window && window.matchMedia("(pointer: coarse)").matches;
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -28,26 +28,55 @@ export default function App() {
     return () => media.removeEventListener("change", sync);
   }, []);
 
-  const reset = () => {
-    setCurrentStrength(defaults.currentStrength);
-    setEncounterDensity(defaults.encounterDensity);
-    setTexture(defaults.texture);
+  useEffect(() => {
+    const recalibrate = () => { neutralRef.current = null; };
+    window.addEventListener("orientationchange", recalibrate);
+    return () => {
+      window.removeEventListener("orientationchange", recalibrate);
+      if (motionListenerRef.current) window.removeEventListener("deviceorientation", motionListenerRef.current);
+    };
+  }, []);
+
+  const toggleMotion = async () => {
+    if (motionEnabled) {
+      if (motionListenerRef.current) window.removeEventListener("deviceorientation", motionListenerRef.current);
+      motionListenerRef.current = null;
+      tiltRef.current = { x: 0, y: 0, at: 0 };
+      neutralRef.current = null;
+      setMotionEnabled(false);
+      return;
+    }
+    if (!motionPossible) return;
+    const orientationApi = window.DeviceOrientationEvent as typeof DeviceOrientationEvent & { requestPermission?: () => Promise<"granted" | "denied"> };
+    // On iPhone the permission call must begin during this exact tap handler.
+    const permission = orientationApi.requestPermission ? orientationApi.requestPermission() : Promise.resolve("granted");
+    try {
+      if (await permission !== "granted") { setMotionUnavailable(true); return; }
+    } catch { setMotionUnavailable(true); return; }
+    const listener = (event: DeviceOrientationEvent) => {
+      if (event.beta === null || event.gamma === null || !Number.isFinite(event.beta) || !Number.isFinite(event.gamma)) return;
+      if (!neutralRef.current) neutralRef.current = { beta: event.beta, gamma: event.gamma };
+      const sideways = wrapDegrees(event.gamma - neutralRef.current.gamma);
+      const forward = wrapDegrees(event.beta - neutralRef.current.beta);
+      const angle = (window.screen.orientation?.angle ?? 0) * Math.PI / 180;
+      const x = sideways * Math.cos(angle) - forward * Math.sin(angle);
+      const y = sideways * Math.sin(angle) + forward * Math.cos(angle);
+      tiltRef.current = { x: tiltAxis(x), y: tiltAxis(y), at: Date.now() };
+    };
+    motionListenerRef.current = listener;
+    neutralRef.current = null;
+    window.addEventListener("deviceorientation", listener);
+    setMotionUnavailable(false);
+    setMotionEnabled(true);
   };
 
   return <main className="aquarium" aria-label="laboon's club, a living deep-sea drawing">
-    <DeepSeaSketch seed={seed} currentStrength={currentStrength} encounterDensity={encounterDensity} texture={texture} paused={paused} />
+    <DeepSeaSketch seed={seed} currentStrength={presentation.currentStrength} encounterDensity={presentation.encounterDensity} texture={presentation.texture} paused={paused} tiltRef={tiltRef} />
     <div className="aquarium-vignette" aria-hidden="true" />
     <div className="aquarium-controls" aria-label="aquarium controls">
       <button type="button" aria-label="begin a new tide" onClick={() => setSeed(Math.floor(Math.random() * 0x7fffffff))}>✳</button>
       <button type="button" aria-label={paused ? "resume animation" : "pause animation"} onClick={() => setPaused((value) => !value)}>{paused ? "▶" : "Ⅱ"}</button>
-      <button type="button" aria-label="tune the aquarium" aria-expanded={tuneOpen} aria-controls="tune-panel" onClick={() => setTuneOpen((value) => !value)}>≋</button>
+      {motionPossible && <button type="button" aria-label={motionEnabled ? "turn off tilt steering" : motionUnavailable ? "tilt steering unavailable; tap to retry" : "enable tilt steering"} aria-pressed={motionEnabled} onClick={toggleMotion}>◌</button>}
     </div>
-    {tuneOpen && <section className="tune-panel" id="tune-panel" aria-label="tune the aquarium">
-      <div className="tune-panel-top"><span>tune</span><button type="button" aria-label="close tuning controls" onClick={() => setTuneOpen(false)}>×</button></div>
-      <Slider label="current" value={currentStrength} onChange={setCurrentStrength} />
-      <Slider label="encounters" value={encounterDensity} onChange={setEncounterDensity} />
-      <Slider label="pencil" value={texture} onChange={setTexture} />
-      <button type="button" className="reset-tune" onClick={reset}>reset</button>
-    </section>}
   </main>;
 }
