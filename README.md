@@ -2,7 +2,7 @@
 
 A phone-first generative deep-sea drawing built with p5.js. Each tide starts from a new seed and places baby Laboon, an anglerfish, jellies, small octopuses, tiny sharks, squid, prey, and marine snow in a shared current. The art uses open colored-pencil lines on ivory paper; no animal is filled in.
 
-The intended eventual address is `laboonsclub.shin86.dev`. This prototype is local; no domain or hosting change is part of this pass.
+The published sketch is at [laboon.shin86.dev](https://laboon.shin86.dev).
 
 Baby Laboon and his small Straw Hat flag are fan-art choices. The flag foreshadows the later One Piece story; it is not presented as a canonical baby marking.
 
@@ -36,4 +36,8 @@ The repository still contains the earlier deterministic plant–herbivore–pred
 
 The visual loop draws on two documented relationships. [Marine snow brings food into deep-sea food webs](https://www.mbari.org/project/ecology-of-marine-snow/). [Midwater anglerfish use luminous lures to attract prey](https://www.mbari.org/animal/deep-sea-anglerfish/). In this piece, current carries snow and small swimmers respond to local food patches and the angler's lure. Laboon's anchored body parts nearby swimmers. These compact rules make motion share causes; they do not simulate a measured habitat.
 
-The drawing keeps pigment in open contours, small hatches, and signals. A stable seed lets the tuning controls change one property without replacing the whole composition.
+The drawing keeps pigment in open contours, small hatches, and signals.
+
+## Publish
+
+GitHub Pages builds and publishes `packages/web/dist` after each push to `main` through [deploy-pages.yml](.github/workflows/deploy-pages.yml). The Pages project uses the custom domain `laboon.shin86.dev`; its DNS-only CNAME points to `haidmoham.github.io`. The Vite build uses relative asset paths so the same output works under a project path and the custom hostname.
