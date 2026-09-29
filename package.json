@@ -7,7 +7,8 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "dev": "concurrently -n server,web -c cyan,magenta \"pnpm --filter @ecosystem/server dev\" \"pnpm --filter @ecosystem/web dev\"",
+    "dev": "pnpm --filter @ecosystem/web dev",
+    "dev:legacy": "concurrently -n server,web -c cyan,magenta \"pnpm --filter @ecosystem/server dev\" \"pnpm --filter @ecosystem/web dev\"",
     "build": "pnpm --filter @ecosystem/web build",
     "start": "pnpm --filter @ecosystem/server start",
     "test": "pnpm --filter @ecosystem/simulation test && pnpm --filter @ecosystem/server test && pnpm --filter @ecosystem/web test",

@@ -10,10 +10,12 @@
   },
   "dependencies": {
     "@ecosystem/protocol": "workspace:*",
+    "p5": "^1.11.13",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@types/p5": "^1.7.7",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^6.0.0",
