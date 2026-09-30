@@ -279,7 +279,10 @@ export function stepDeepSeaModel(model: DeepSeaModel, dt: number, currentStrengt
     shark.phase += step * 1.1;
     shark.x += shark.facing * shark.drift * step + current * .002 * step;
     shark.y += Math.sin(shark.phase * .35) * shark.drift * .5 * step;
-    if (shark.x < .04 || shark.x > .96) shark.facing = shark.facing === 1 ? -1 : 1;
+    // A toss or contact can leave a shark outside its swim margin for many frames.
+    // Point inward throughout that band rather than toggling on every frame.
+    if (shark.x < .04) shark.facing = 1;
+    else if (shark.x > .96) shark.facing = -1;
   }
   for (const particle of model.prey.slice(0, wanted)) {
     if (!particle.alive) continue;
@@ -358,12 +361,17 @@ export function stepDeepSeaModel(model: DeepSeaModel, dt: number, currentStrengt
       if (creature === heldCreature) continue;
       const edge = creature === a ? .075 : .025;
       if (creature.x < edge || creature.x > 1 - edge) {
+        // Separation can push a body past a wall while it is already moving inward.
+        if ((creature.x < edge && creature.vx < 0) || (creature.x > 1 - edge && creature.vx > 0)) {
+          creature.vx *= creature.flight ? -.995 : -.36;
+        }
         creature.x = clamp(creature.x, edge, 1 - edge);
-        creature.vx *= creature.flight ? -.995 : -.36;
       }
       if (creature.y < edge || creature.y > 1 - edge) {
+        if ((creature.y < edge && creature.vy < 0) || (creature.y > 1 - edge && creature.vy > 0)) {
+          creature.vy *= creature.flight ? -.995 : -.36;
+        }
         creature.y = clamp(creature.y, edge, 1 - edge);
-        creature.vy *= creature.flight ? -.995 : -.36;
       }
     }
   }

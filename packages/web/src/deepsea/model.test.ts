@@ -64,6 +64,99 @@ describe("deep sea ecology model", () => {
     expect(model.angler.flight).toBeGreaterThan(.9);
   });
 
+  it.each([
+    { x: .03, facing: -1 as const, inward: 1 },
+    { x: .03, facing: 1 as const, inward: 1 },
+    { x: .97, facing: -1 as const, inward: -1 },
+    { x: .97, facing: 1 as const, inward: -1 },
+  ])("turns a shark inward at x=$x facing=$facing without repeated flips", ({ x, facing, inward }) => {
+    const model = createDeepSeaModel(42);
+    model.jellies = []; model.octopuses = []; model.prey = []; model.squids = [];
+    model.sharks = model.sharks.slice(0, 1);
+    model.angler.x = .8; model.angler.y = .8;
+    const shark = model.sharks[0];
+    Object.assign(shark, { x, y: .1, facing, drift: .01 });
+    for (let frame = 0; frame < 120; frame += 1) {
+      stepDeepSeaModel(model, 1 / 60, .45, 0);
+      expect(shark.facing).toBe(inward);
+    }
+    expect(shark.x).toBeGreaterThan(.04);
+    expect(shark.x).toBeLessThan(.96);
+  });
+
+  it.each([
+    { x: .02, inward: 1 },
+    { x: .98, inward: -1 },
+  ])("lets a shark held at x=$x swim away after release", ({ x, inward }) => {
+    const model = createDeepSeaModel(42);
+    model.jellies = []; model.octopuses = []; model.prey = []; model.squids = [];
+    model.sharks = model.sharks.slice(0, 1);
+    model.angler.x = .8; model.angler.y = .8;
+    const shark = model.sharks[0];
+    Object.assign(shark, { x: .2, y: .1, drift: .01 });
+    const viewport = { width: 390, height: 844 };
+    expect(beginCreatureDrag(model, .2, .1, viewport, 0)?.kind).toBe("shark");
+    moveDraggedCreature(model, x, .1);
+    for (let frame = 0; frame < 6; frame += 1) {
+      stepDeepSeaModel(model, 1 / 60, .45, 0, viewport);
+      expect(shark.x).toBe(x);
+      expect(shark.facing).toBe(inward);
+    }
+    // A slow inward release is still outside the physical wall on the next frame.
+    releaseCreature(model, 10 * inward, 0, viewport);
+    for (let frame = 0; frame < 120; frame += 1) {
+      stepDeepSeaModel(model, 1 / 60, .45, 0, viewport);
+      expect(shark.facing).toBe(inward);
+      expect(shark.vx * inward).toBeGreaterThan(0);
+    }
+    expect(shark.x).toBeGreaterThan(.04);
+    expect(shark.x).toBeLessThan(.96);
+  });
+
+  it.each([
+    { axis: "x" as const, velocity: "vx" as const, position: .03, inward: 1 },
+    { axis: "x" as const, velocity: "vx" as const, position: .97, inward: -1 },
+    { axis: "y" as const, velocity: "vy" as const, position: .03, inward: 1 },
+    { axis: "y" as const, velocity: "vy" as const, position: .97, inward: -1 },
+  ])("preserves inward $velocity when a collision pushes a body past $axis=$position", ({ axis, velocity, position, inward }) => {
+    for (const flight of [0, 1]) {
+      const model = createDeepSeaModel(42);
+      model.jellies = []; model.sharks = []; model.prey = []; model.squids = [];
+      model.octopuses = model.octopuses.slice(0, 2);
+      model.angler.x = .8; model.angler.y = .8;
+      model.octopuses.forEach((creature, index) => {
+        Object.assign(creature, { x: .1, y: .1, drift: 0, size: .03, flight });
+        creature[axis] = position + index * .015 * inward;
+        creature[velocity] = .05 * inward;
+      });
+      stepDeepSeaModel(model, .016, 0, 0);
+      const creature = model.octopuses[0];
+      expect(creature[axis]).toBe(inward === 1 ? .025 : .975);
+      expect(creature[velocity] * inward).toBeCloseTo(.05 * Math.exp(-(flight ? .08 : 2.5) * .016), 10);
+    }
+  });
+
+  it.each([
+    { axis: "x" as const, velocity: "vx" as const, position: .0251, outward: -1 },
+    { axis: "x" as const, velocity: "vx" as const, position: .9749, outward: 1 },
+    { axis: "y" as const, velocity: "vy" as const, position: .0251, outward: -1 },
+    { axis: "y" as const, velocity: "vy" as const, position: .9749, outward: 1 },
+  ])("still rebounds outward $velocity at $axis=$position", ({ axis, velocity, position, outward }) => {
+    for (const flight of [0, 1]) {
+      const model = createDeepSeaModel(42);
+      model.jellies = []; model.sharks = []; model.prey = []; model.squids = [];
+      model.octopuses = model.octopuses.slice(0, 1);
+      model.angler.x = .8; model.angler.y = .8;
+      const creature = model.octopuses[0];
+      Object.assign(creature, { x: .1, y: .1, drift: 0, flight });
+      creature[axis] = position;
+      creature[velocity] = .5 * outward;
+      stepDeepSeaModel(model, .016, 0, 0);
+      expect(creature[axis]).toBe(outward === -1 ? .025 : .975);
+      expect(creature[velocity] * -outward).toBeCloseTo(.5 * Math.exp(-(flight ? .08 : 2.5) * .016) * (flight ? .995 : .36), 10);
+    }
+  });
+
   it("registers a fast fling against a small body along its path", () => {
     const model = createDeepSeaModel(29);
     model.jellies = []; model.octopuses = model.octopuses.slice(0, 1); model.sharks = []; model.prey = []; model.squids = [];
